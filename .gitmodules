@@ -1,0 +1,3 @@
+[submodule "wp-cli-markdown-post"]
+	path = wp-cli-markdown-post
+	url = https://github.com/gloomic/wp-cli-markdown-post.git
