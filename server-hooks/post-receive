@@ -75,7 +75,13 @@ function validate_wp_cli_command( &$command ) {
 function validate_commit_msgs_and_execute_commands( $oldrev, $newrev ) {
     global $files_str;
 
-    $output = shell_exec( "git rev-list $oldrev..$newrev" );
+    $ouput = '';
+    if( strncmp( $oldrev, '0000000', 7 ) === 0 ) { // If it is the first push with the initial commit.
+        $output = shell_exec( "git rev-list $newrev" );
+    } else {
+        $output = shell_exec( "git rev-list $oldrev..$newrev" );
+    }
+
     $missed_revs = explode( EOL, $output ); // It will return two strings if the delimitor is at the end of the string.
     $wpcli_commands = array();
     $error_occured = false;
