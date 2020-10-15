@@ -83,6 +83,7 @@ function validate_commit_msgs_and_execute_commands( $oldrev, $newrev ) {
     }
 
     $missed_revs = explode( EOL, $output ); // It will return two strings if the delimitor is at the end of the string.
+    $missed_revs = array_reverse( $missed_revs ); // Execute commands in chronological order.
     $wpcli_commands = array();
     $error_occured = false;
     foreach( $missed_revs as $rev ) {
