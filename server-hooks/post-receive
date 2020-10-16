@@ -39,53 +39,18 @@ function parse_args( $args ) {
     return array( $positional_args, $assoc_args, );
 }
 
-function validate_wp_cli_command( &$command ) {
-    global $files_str;
-
-    $full_args = explode( ' ', $command );
-    if ( empty( $full_args ) ) {
-        return 'Commit message error: The command is empty';
-    }
-
-    $cmd = $full_args[0];
-    if ( in_array( $cmd, array( 'new', 'update', 'create' ) ) ) {
-        array_shift( $full_args );
-        list( $args, $assoc_args ) = parse_args( $full_args );
-        if ( empty( $args ) ) {
-            return 'Commit message error: The argument is missing in the command.';
-        }
-
-        if ( $cmd === 'create' || $cmd === 'update' ) {
-            // These markdown files needed to be updated after being published to wordpress.
-            if ( $cmd === 'create' ) {
-                $files_str .= ' ' . $args[0];
-            }
-
-            $file = "../" . $args[0];
-            $command = "$cmd $file";// . implode( ' ', $assoc_args );
-            if ( ! is_file( $file ) || ! file_exists( $file ) ) {
-                return 'Commit message error: The file argument is wrong. It does not exist.';
-            }
-        }
-    }
-
-    return true;
-}
-
-function validate_commit_msgs_and_execute_commands( $oldrev, $newrev ) {
-    global $files_str;
-
-    $ouput = '';
+function execute_commands_from_commit_messages( $oldrev, $newrev ) {
     if( strncmp( $oldrev, '0000000', 7 ) === 0 ) { // If it is the first push with the initial commit.
         $output = shell_exec( "git rev-list $newrev" );
     } else {
         $output = shell_exec( "git rev-list $oldrev..$newrev" );
     }
 
-    $missed_revs = explode( EOL, $output ); // It will return two strings if the delimitor is at the end of the string.
+    // Note there will be an empty string in the returned array if output ends with the delimitor.
+    $missed_revs = explode( EOL, $output );
     $missed_revs = array_reverse( $missed_revs ); // Execute commands in chronological order.
     $wpcli_commands = array();
-    $error_occured = false;
+    $files_str = ''; // Files needed to be committed after they are updated by wp-cli commands.
     foreach( $missed_revs as $rev ) {
         if ( empty( $rev ) ) { // Exclude empty split values got from explode().
             continue;
@@ -96,35 +61,49 @@ function validate_commit_msgs_and_execute_commands( $oldrev, $newrev ) {
         // Get the commit message from the commit information content,
         // it is the line which following the first empty line.
         if ( preg_match( '|^$\n^(.+)$\n|m', $full_commit_msg, $matches ) ) {
-
             $commit_msg = $matches[1];
             if ( preg_match( '|^([^:]+):\ (.+)$|', $commit_msg, $matches ) ) {
                 $commit_type = $matches[1];
-
                 if( $commit_type === 'cmd' ) {
                     $command = $matches[2];
-                    $result = validate_wp_cli_command( $command );
-                    if ( $result !== true ) {
-                        echo( $result . EOL );
-                        $error_occured = true;
-                    } else {
+                    $all_args = explode( ' ', $command );
+                    if ( empty( $all_args ) ) {
+                        echo 'Commit message error: The command is empty' . EOL;
+                        continue;
+                    }
+
+                    $command_name = $all_args[0];
+                    if ( in_array( $command_name, array( 'create', 'update' ) ) ) {
+                        array_shift( $all_args );
+                        list( $args, $assoc_args ) = parse_args( $all_args );
+                        if ( empty( $args ) ) {
+                            echo 'Commit message error: Arguments are missing in the command.';
+                            continue;
+                        }
+
+                        // important! Change file path to make the wp-cli command being able to find it.
+                        $file = "../" . $args[0];
+
+                        $command = "$command_name $file " . implode( ' ', $assoc_args );
+                        if ( ! is_file( $file ) || ! file_exists( $file ) ) {
+                            echo 'Commit message error: The file argument is wrong. It does not exist.';
+                            continue;
+                        }
+
                         $wpcli_commands[] = WP_CLI_TOOL . $command;
+                        if ( $command_name === 'create' ){
+                           $files_str .= ' ' . $args[0];
+                        }
                     }
                 }
             }
             else {
                 echo "Commit message error: It must be format of <commit-type>: <commit-message>\n";
-                $error_occured = true;
             }
         } else {
             echo "Commit message error: commit message is empty for commit $rev\n";
-            $error_occured = true;
         }
-    }
-
-    if ( $error_occured === true ) {
-        return false;
-    }
+    }// foreach
 
     // Run each wp-cli command
     if ( ! empty( $wpcli_commands ) ) {
@@ -138,7 +117,11 @@ function validate_commit_msgs_and_execute_commands( $oldrev, $newrev ) {
 
         // Update markdown files modified by wp-cli commands in the previous step.
         if( ! empty( $files_str ) ) {
-            shell_exec( "git add $files_str" );
+            echo "--------------------------------\n";
+            echo "Commit updated markdown files\n";
+            echo "--------------------------------\n";
+            echo "git add$files_str\n";
+            echo shell_exec( "git add $files_str" );
             if( ! file_exists( '.auto-commit-message' ) ) {
                 exec( "echo 'auto: update markdown files after push' > .auto-commit-message" );
             }
@@ -149,8 +132,6 @@ function validate_commit_msgs_and_execute_commands( $oldrev, $newrev ) {
     return true;
 }
 
-$files_str = '';
-
 // Read one line from STDIN.
 // The arguments passed in STDIN are in the form <oldrev> <newrev> <refname>.
 $line = fgets( STDIN );
@@ -160,7 +141,7 @@ if( $line !== false ) { // Process only the first branch
     $newrev = strtok( $token );
     $refname = strtok( $token );
     if ( $refname === "refs/heads/master" || $refname === "refs/heads/main" ) {
-        $result = validate_commit_msgs_and_execute_commands( $oldrev, $newrev );
+        $result = execute_commands_from_commit_messages( $oldrev, $newrev );
         exit( $result ? 0 : 1 );
     } else {
         echo "This is not the master/main branch\n";
