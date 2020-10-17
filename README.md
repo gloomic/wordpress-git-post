@@ -10,7 +10,7 @@ The work are done through Git hooks and custom WP-CLI commands. We build a Git h
 
 > **Note:**
 >
-> The custom command itself does not provide parsing for markdown format content for it may have been enabled by some plugin you are using like [Jetpack](https://wordpress.org/plugins/jetpack). Therefore you need to enable markdown feature through any plugin you like to make the content being displayed as proper HTML in the front.
+> The custom WP-CLI command itself does not provide parsing for markdown format content for it may have been enabled by some plugin you are using like [Jetpack](https://wordpress.org/plugins/jetpack). Therefore you need to enable markdown feature through any plugin you like to make the content being displayed as proper HTML in the front.
 
 ## Getting started
 
@@ -27,6 +27,8 @@ The work are done through Git hooks and custom WP-CLI commands. We build a Git h
    # update the current branch.
    $ git config receive.denyCurrentBranch updateInstead
    ```
+
+   Copy `commit.sh` to `.git` folder of the repository and execute `chmod a+x commit.sh` (only for Linux) to make it executable.
 
    Then set up SSH access to the remote repository. See [Setting up the server](https://git-scm.com/book/en/v2/Git-on-the-Server-Setting-Up-the-Server) for reference if you are not familiar to that.
 
@@ -54,6 +56,24 @@ The installing is simple, just some copy operations. You need install Git hooks 
 - **Install hooks**
 
   Copy hooks inside server-hooks folder to the `.git/hooks` to the remote repository. Optionally copy hooks inside server-hooks folder to the `.git/hooks` in the local repository.
+
+  > **Note:**
+  >
+  > If your WordPress site is running on Windows, change `post-receive` file to make it work properly on Windows as following steps. Otherwise you may meet `'wp' is not recognized as an internal or external command` error.
+  >
+  > Change below line in `post-receive` file
+  >
+  > ```php
+  > define( "WP_CLI_TOOL", "wp " );
+  > ```
+  >
+  > to
+  >
+  > ```php
+  > define( "WP_CLI_TOOL", "php <wp-path> " );
+  > ```
+  >
+  > Use your own path to `wp` file to replace  `<wp-path>`. Be care that there is a space in the end.
 
 - **Install custom WP-CLI commands**
 

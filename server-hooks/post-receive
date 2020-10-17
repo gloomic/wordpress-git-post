@@ -120,12 +120,7 @@ function execute_commands_from_commit_messages( $oldrev, $newrev ) {
             echo "--------------------------------\n";
             echo "Commit updated markdown files\n";
             echo "--------------------------------\n";
-            echo "git add$files_str\n";
-            echo shell_exec( "git add $files_str" );
-            if( ! file_exists( '.auto-commit-message' ) ) {
-                exec( "echo 'auto: update markdown files after push' > .auto-commit-message" );
-            }
-            echo shell_exec( 'git commit -F .auto-commit-message' );
+            shell_exec( "commit.sh '$files_str'" );
         }
     }
 
