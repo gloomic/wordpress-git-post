@@ -28,8 +28,6 @@ The work are done through Git hooks and custom WP-CLI commands. We build a Git h
    $ git config receive.denyCurrentBranch updateInstead
    ```
 
-   Copy `commit.sh` to `.git` folder of the remote repository and execute `chmod a+x commit.sh` (for Linux) to make it executable.
-
    Then set up SSH access to the remote repository. See [Setting up the server](https://git-scm.com/book/en/v2/Git-on-the-Server-Setting-Up-the-Server) for reference if you are not familiar to that.
 
 2. **Install WP-CLI tool**
@@ -55,7 +53,7 @@ The installing is simple, just some copy operations. You need install Git hooks 
 
 - **Install hooks**
 
-  Copy files inside `server-hooks` folder to the `.git/hooks` folder of the remote repository. Optionally copy files inside `client-hooks` folder to the `.git/hooks` folder of the local repository. Execute `chmod a+x <hook-file>` (for Linux) to make them executable.
+  Copy `post-receive` file inside `server-hooks` folder to the `.git/hooks` folder of the remote repository. Execute `chmod a+x post-receive` (for Linux) under `.git/hooks` folder to make it executable.
 
   > **Note:**
   >
@@ -105,7 +103,9 @@ Configure the local git repository with below commands to set the remote reposit
 $ git remote add origin <remote-repostiory-url>
 ```
 
-Next what you do is just write or update a markdown file in your local repository, commit it and push to the remote repository. In one commit, it only handle just one single markdown file. Below is a full process (See [wp-cli-markdown-post](https://github.com/gloomic/wp-cli-markdown-post) for more details using the custom WP-CLI command):
+Next what you do is just write or update a markdown file in your local repository, commit it and push to the remote repository. In one commit, it only handle just one single markdown file. 
+
+Below is a full process (see [wp-cli-markdown-post](https://github.com/gloomic/wp-cli-markdown-post) for more details using the custom WP-CLI command):
 
 **Step 1. Write new markdown files or update existing ones**
 
@@ -129,25 +129,21 @@ You post content here....
 
 If your local machine has WordPress site running and you installed WP-CLI and the custom WP-CLI command provided in this tool, you can use `wp new my-first-post` to create a markdown file with empty meta values.
 
-**Step 2. Commit the new or modified file**
+> **Note:**
+>
+> For modified markdown files, only the description and content will be updated to WordPress site.
+
+**Step 2. Commit the new or modified files**
+
+You can commit multiple new or modified markdown files at a time.
 
 ```shell
-# Add your changes, like "git add examples/my-first-post,md"
-$ git add <file-path>
+# Add all the new created or modified files, like "git add examples/my-first-post.md"
+$ git add <files>
 
-# Commit the changes, like "git commit -m 'cmd: create examples/my-first-post.md'"
-$ git commit -m 'cmd: <create/update> <file-path>'
+# Commit the changes
+$ git commit -m 'your commit message'
 ```
-
-> **Note:** To insert or update a post with a markdown file through Git, you have to write the corresponding WP-CLI command in the commit message in the form `cmd: wp <command-name> <markdown-file-path-relative-to-the-repository-root>`. Below are some other example:
->
-> ```shell
-> # Create a new post
-> $ git commit -m 'cmd: wp create git/userfule-git-commands.md'
-> 
-> # Update a post
-> $ git commit -m 'cmd: wp update git/userfule-git-commands.md'
-> ```
 
 **Step 3. Push to the remote repository**
 
@@ -165,7 +161,9 @@ In the future pushes, just run:
 $ git push
 ```
 
-After you make a push, you may need to execute `git pull` command to get updated markdown file that has  post `ID` added to it. Otherwise, it will prompt you to do that when you make a push in the next time.
+When you push one or more commits to the remote repository, it will trigger actions on remote server to create new or update posts with the files in this push. And you will get information about these actions in terminal, like which files are used to create new posts and which ones are used to update posts.
+
+After you make a push, you may need to execute `git pull` command to get updated markdown files that have post `ID` added to them. Otherwise, it will prompt you to do that when you push in the next time.
 
 ## Authors
 
