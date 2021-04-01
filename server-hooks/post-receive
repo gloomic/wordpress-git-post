@@ -2,6 +2,17 @@
 
 # Create or update posts with markdown
 post_with_markdown() {
+    # Check commit message in HEAD to determine if it needs to create or update posts.
+    commit_msg=$(git log -1 --format="format:%s")
+    case $commit_msg in nopost*)
+        echo "----------------"
+        echo "No posts are made"
+        echo "----------------"
+        exit 0
+    esac
+
+    # ------------------------Post with changed files
+
     if [ $oldrev = "0000000000000000000000000000000000000000" ]; then
         new_files=$(git show HEAD --format='' --name-only --diff-filter=A)
         modified_files=$(git show HEAD --format='' --name-only --diff-filter=M)

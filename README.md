@@ -6,7 +6,7 @@ In this project, we dedicated to build a tool that allows you to automatically m
 
 ## Ideas
 
-The work are done through Git hooks and custom WP-CLI commands. We build a Git hook to the remote Git repository, it executes the custom WP-CLI command we wrote in the commit message to insert or update posts with markdown files on push.
+The work are done through Git hooks and custom WP-CLI commands. We build a Git hook at the remote Git repository, it will be executed to publish and/or update posts with the markdown files added and/or updated in this push.
 
 > **Note:**
 >
@@ -16,11 +16,18 @@ The work are done through Git hooks and custom WP-CLI commands. We build a Git h
 
 ### Prerequisites
 
-1. **Build Git repositories**
+1. **Create and config the remote Git repository**
 
-   Build a local Git repository on local machine and a remote one on the server. The remote repository needs to be a non-bare one.
+   Build a Git repository on the remote server. The remote repository needs to be a non-bare one (By default `git init` create a non-bare repository).
 
-   To be able to push to a non-bare remote repository, configure the remote repository to allow them.
+   Login to the remote server and direct to a folder where you want to put the repository and execute below command:
+
+   ```shell
+   # Create a repository
+   $ git init
+   ```
+
+   To be able to push to a non-bare repository, configure it with below command:
 
    ```shell
    # Config receive.denyCurrentBranch to allow the push and
@@ -49,7 +56,7 @@ The work are done through Git hooks and custom WP-CLI commands. We build a Git h
 
 ### Installing
 
-The installing is simple, just some copy operations. You need install Git hooks and WP-CLI commands:
+The installing is simple, just some copy operations. What you need to do is to install Git hooks and WP-CLI commands on the remote server:
 
 - **Install hooks**
 
@@ -78,16 +85,16 @@ The installing is simple, just some copy operations. You need install Git hooks 
   Copy `wp-cli-markdown-post-command.php` to your current using theme on the server. To make it workd add below content to the `functions.php` file. Take care to use different code depending on whether you are using a parent theme or a child theme (name ends with `-child`).
 
   If you are using a parent theme:
-  
+
   ```php
   // Use below code if you are using a parent theme.
   if ( defined( 'WP_CLI' ) && WP_CLI ) {
       require_once( get_parent_theme_file_path() . '/wp-cli-markdown-post-command.php' );
   }
   ```
-  
+
   Or if you are using a child theme:
-  
+
   ```php
   // Use below code if you are using a child theme.
   if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -95,15 +102,26 @@ The installing is simple, just some copy operations. You need install Git hooks 
   }
   ```
 
+> **Tips**
+>
+> If you have another WordPress site running on your local machine for some purpose like testing the remote one, it is a good idea to install this custom WP-CLI  command tool either on the local machine. With it it is more handy to create a new markdown file which will contain the `YAML` part.
+
 ## Usage
 
-Configure the local git repository with below commands to set the remote repository:
+First clone the remote Git repository which we created in the **Prerequisites** part to the local machine.
+
+```shell
+# Clone the remote repository to local
+$ git clone <remote-repository-url>
+```
+
+Of if you already has one on the local machine, configure it with below commands to add a remote to point to the remote repository:
 
 ```shell
 $ git remote add origin <remote-repostiory-url>
 ```
 
-Next what you do is just write or update a markdown file in your local repository, commit it and push to the remote repository. In one commit, it only handle just one single markdown file. 
+Next what you do is just write or update a markdown file in your local repository, commit it and push to the remote repository. In one commit, it only handle just one single markdown file.
 
 Below is a full process (see [wp-cli-markdown-post](https://github.com/gloomic/wp-cli-markdown-post) for more details using the custom WP-CLI command):
 
@@ -142,8 +160,16 @@ You can commit multiple new or modified markdown files at a time.
 $ git add <files>
 
 # Commit the changes
-$ git commit -m 'your commit message'
+$ git commit -m 'my first post'
 ```
+
+> **Tips**
+>
+> If you do not the changes in the push to be used to update your WordPress site, just use special commit message for the last commit in the push.
+>
+> ```shell
+> $ git commit -m 'nopost'
+> ```
 
 **Step 3. Push to the remote repository**
 
@@ -155,7 +181,7 @@ $ git push -u origin master
 $ git push -u origin main
 ```
 
-In the future pushes, just run:
+For the future pushes, just run:
 
 ```shell
 $ git push
@@ -164,6 +190,34 @@ $ git push
 When you push one or more commits to the remote repository, it will trigger actions on remote server to create new or update posts with the files in this push. And you will get information about these actions in terminal, like which files are used to create new posts and which ones are used to update posts.
 
 After you make a push, you may need to execute `git pull` command to get updated markdown files that have post `ID` added to them. Otherwise, it will prompt you to do that when you push in the next time.
+
+## FAQs
+
+### Is there any requirements for the repository how it is structed?
+
+No. You are free to organize your files. Below is an example:
+
+```
+.
+|-- wordpress
+|   |-- my-wordpress-post-1.md
+|   |-- my-wordpress-post-1.md
+|   `-- my-wordpress-post-3.md
+|-- javascript
+|   |-- my-javascript-post-1.md
+|   |-- my-javascript-post-2.md
+|   |-- my-javascript-post-3.md
+|   `-- my-javascript-post-4.md
+`-- about.md
+```
+
+### How to make the changes in the push not being updated to the WordPress site?
+
+Just use a special commit message for the last commit in the push:
+
+```shell
+$ git commit -m 'nopost'
+```
 
 ## Authors
 
